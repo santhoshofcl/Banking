@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Banking Exam Simulator</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f8f9fa;
+}
+
+.hidden { display: none; }
+.container { padding: 20px; }
+
+.test-list button, #dayButtons button {
+    margin: 8px;
+    padding: 12px 20px;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: 0.3s;
+}
+.test-list button:hover, #dayButtons button:hover { background: #0056b3; }
+
+.exam-layout { display: flex; height: 100vh; }
+.left-panel, .right-panel {
+    width: 20%; padding: 12px; background: #e9ecef;
+    overflow-y: auto; border-right: 1px solid #ccc;
+}
+.right-panel { border-left: 1px solid #ccc; border-right: none; }
+.center-panel { width: 60%; padding: 15px; background: #fff; }
+
+.question-btn {
+    display: inline-block; width: 40px; height: 40px;
+    margin: 4px; text-align: center; line-height: 40px;
+    border: 1px solid #333; cursor: pointer;
+    background: #dee2e6; border-radius: 5px;
+    transition: 0.3s;
+}
+.question-btn:hover { background: #ccc; }
+.answered { background-color: #28a745 !important; color: white; font-weight: bold; }
+.review { background-color: #ff9800 !important; color: white; font-weight: bold; }
+.not-visited { background-color: #dee2e6 !important; }
+
+.timer { font-size: 20px; margin-bottom: 12px; color: #dc3545; font-weight: bold; text-align: center; }
+
+.nav-buttons button {
+    margin: 5px; padding: 10px 15px; cursor: pointer;
+    background: #6c757d; color: white; border: none;
+    border-radius: 5px; transition: 0.3s;
+}
+.nav-buttons button:hover { background: #5a6268; }
+
+.result-summary {
+    padding: 20px; background: #fff; margin: 20px auto;
+    width: 80%; border-radius: 8px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
+h2 { margin-top: 0; color: #333; }
+table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+th, td { border: 1px solid #444; padding: 10px; text-align: center; }
+th { background-color: #007bff; color: white; }
+
+img.question-img {
+    max-width: 100%; margin-bottom: 10px;
+    border: 1px solid #ccc; border-radius: 5px;
+}
+#dashboard { padding: 20px; text-align: center; }
+#dayButtons {
+    display: grid; grid-template-columns: repeat(10, 1fr);
+    gap: 10px; max-width: 95%; margin: 0 auto;
+}
+#dayButtons button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+.dashboard-btn {
+    background-color: #007bff;
+    color: white;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-btn:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.dashboard-btn:active {
+    background-color: #004494;
+    transform: translateY(0);
+}
+.section-header {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: #fff;
+    text-align: center;
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0.5px;
+}
+
+
+@media (max-width: 740px) {
+    .exam-layout {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .left-panel, .right-panel {
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        overflow-x: auto;
+    }
+
+    .center-panel {
+        width: 100%;
+        padding: 10px;
+    }
+
+    .question-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+
+    .nav-buttons {
+        text-align: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .nav-buttons button {
+        padding: 8px 10px;
+        font-size: 14px;
+        width: 45%;
+        margin-bottom: 5px;
+    }
+
+    #dayButtons {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    #dayButtons button {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .result-summary {
+        width: 95%;
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    table th, table td {
+        padding: 2px;
+        font-size: 13px;
+    }
+
+    img.question-img {
+        max-width: 95%;
+        height: auto;
+    }
+}
+
+@media (max-width: 360px) {
+    .question-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+
+    .nav-buttons button {
+        width: 100%;
+        font-size: 12px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- Dashboard -->
+<div id="dashboard" class="container">
+  <h1>Banking Exam Simulator</h1>
+  <h3>Test Days</h3>
+  <div id="dayButtons"></div>
+</div>
+
+<!-- Exam Screen -->
+<div id="examScreen" class="hidden">
+  <div class="exam-layout">
+    <div class="left-panel">
+  <div class="section-header" id="sectionTitle">Section Name</div>
+  <div id="questionPanel"></div>
+</div>
+    <div class="center-panel">
+      <div id="questionContent"></div>
+      <div id="options"></div>
+    </div>
+    <div class="right-panel">
+      <div class="timer" id="timer">Time: 00:00</div>
+      <div class="nav-buttons">
+        <button onclick="previousQuestion()">Previous</button>
+        <button onclick="nextQuestion()">Next</button>
+        <button onclick="markForReview()">Mark for Review</button>
+        <button onclick="clearResponse()">Clear Response</button>
+        <button onclick="submitTest()">Submit Test</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Page -->
+<div id="resultPage" class="hidden">
+  <div class="result-summary">
+    <h1><span id="resultDayTitle"> Result</span></h1>
+    <table id="testResultsTable">
+      <tr>
+        <th>Section</th><th>Attempted</th><th>Skipped</th>
+        <th>Correct</th><th>Wrong</th><th>Raw Score</th>
+      </tr>
+    </table>
+    <h2>Total Summary</h2>
+    <p>Total Raw Score: <span id="totalScore"></span></p>
+    <p>Total Attempted: <span id="totalAttempted"></span></p>
+    <p>Total Skipped: <span id="totalSkipped"></span></p>
+    <p>Total Correct: <span id="totalCorrect"></span></p>
+    <p>Total Wrong: <span id="totalWrong"></span></p>
+    <button onclick="goHome()" class="dashboard-btn">Go to Dashboard</button>
+  </div>
+</div>
+
+<script>
+const sheetId = "1bP705p-ubcbssLQg4HqMJMBn5k-eM06aTmrnmpnGumY"; 
+
+let allQuestions = [], sectionQuestions = [];
+let currentQuestion = 0, selectedAnswers = [], reviewFlags = [], visited = [];
+let timerDuration = 0, timerInterval, currentDay = '', currentSectionIndex = 0;
+
+const sections = [
+  {name: "English", count: 50, time: 45*60},
+  {name: "Quantitative Aptitude", count: 50, time: 45*60},
+  {name: "Reasoning Ability", count: 50, time: 45*60},
+  {name: "General Awareness", count: 50, time: 35*60}
+];
+
+let resultsPerTest = [], totalScore = 0, totalCorrect = 0, totalWrong = 0, totalSkipped = 0, totalAttempted = 0;
+
+// ✅ Fetch sheet data safely
+async function fetchSheetData(sheetName) {
+  try {
+    const resp = await fetch(`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`);
+    const text = await resp.text();
+    if (!text.includes("google.visualization")) return [];
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    return json.table.rows || [];
+  } catch {
+    return [];
+  }
+}
+
+// ✅ Check if a day has available questions
+async function checkDayAvailability(dayName){
+  const rows = await fetchSheetData(dayName);
+  return rows.length > 0;
+}
+
+// ✅ Load available days dynamically
+async function loadAvailableDays() {
+  const dayButtons = document.getElementById("dayButtons");
+  dayButtons.innerHTML = "";
+  const days = Array.from({length: 10}, (_, i) => `day${i+1}`);
+
+  for (const sheetName of days) {
+    const available = await checkDayAvailability(sheetName);
+    const btn = document.createElement("button");
+    btn.textContent = sheetName.replace("day", "Day");
+    btn.disabled = !available;
+    if (available) btn.onclick = () => startDay(sheetName);
+    dayButtons.appendChild(btn);
+  }
+}
+
+// ✅ Load all questions for a day
+async function loadQuestions(dayName) {
+  const rows = await fetchSheetData(dayName);
+  allQuestions = rows.map(r => ({
+      section: r.c[0]?.v || "",
+      image: r.c[1]?.v || "",
+      question: r.c[2]?.v || "",
+      options: [r.c[3]?.v, r.c[4]?.v, r.c[5]?.v, r.c[6]?.v],
+      answer: (r.c[7]?.v || 1) - 1
+  }));
+}
+
+async function startDay(dayName){
+  currentDay = dayName;
+  totalScore = totalCorrect = totalWrong = totalSkipped = totalAttempted = 0;
+  resultsPerTest = [];
+  await loadQuestions(dayName);
+  if (allQuestions.length === 0) { alert("⚠ No questions available for " + dayName); return; }
+  currentSectionIndex = 0;
+  startSection();
+}
+
+function startSection(){
+  const section = sections[currentSectionIndex];
+  sectionQuestions = allQuestions.filter(q=>q.section===section.name).slice(0,section.count);
+  selectedAnswers = new Array(sectionQuestions.length).fill(null);
+  reviewFlags = new Array(sectionQuestions.length).fill(false);
+  visited = new Array(sectionQuestions.length).fill(false);
+  currentQuestion = 0; timerDuration = section.time;
+
+
+  document.getElementById("sectionTitle").textContent = section.name;
+
+  document.getElementById("dashboard").classList.add("hidden");
+  document.getElementById("resultPage").classList.add("hidden");
+  document.getElementById("examScreen").classList.remove("hidden");
+
+  loadQuestionsPanel(); loadQuestion(currentQuestion); startTimer();
+}
+
+function loadQuestionsPanel(){
+  const panel = document.getElementById("questionPanel");
+  panel.innerHTML = '';
+  sectionQuestions.forEach((_,i)=>{
+    const btn=document.createElement('div');
+    btn.textContent=i+1;
+    btn.className='question-btn not-visited';
+    btn.id='qbtn'+i;
+    btn.onclick=()=>{currentQuestion=i;loadQuestion(i);};
+    panel.appendChild(btn);
+  });
+}
+
+function loadQuestion(index){
+  visited[index]=true;
+  const qArea=document.getElementById("questionContent");
+  qArea.innerHTML="";
+  if(sectionQuestions[index].image){
+    const img=document.createElement("img");
+    img.src=sectionQuestions[index].image;
+    img.className="question-img";
+    img.onerror = () => { img.style.display = "none"; }; // Hide broken images
+    qArea.appendChild(img);
+}
+  const text=document.createElement("h2");
+  text.textContent=sectionQuestions[index].question;
+  qArea.appendChild(text);
+  const opts=document.getElementById("options");
+  opts.innerHTML='';
+  sectionQuestions[index].options.forEach((opt,i)=>{
+    if(opt){
+      const radio=document.createElement('input');
+      radio.type="radio"; radio.name="option"; radio.value=i;
+      if(selectedAnswers[index]===i) radio.checked=true;
+      radio.onclick=()=>{selectedAnswers[index]=i;updateQuestionBtn(index);};
+      opts.appendChild(radio);
+      opts.appendChild(document.createTextNode(opt));
+      opts.appendChild(document.createElement("br"));
+    }
+  });
+  updateQuestionBtn(index);
+}
+
+function updateQuestionBtn(index){
+  const btn=document.getElementById('qbtn'+index);
+  if(reviewFlags[index]) btn.className='question-btn review';
+  else if(selectedAnswers[index]!==null) btn.className='question-btn answered';
+  else btn.className='question-btn not-visited';
+}
+
+function nextQuestion(){ if(currentQuestion<sectionQuestions.length-1){currentQuestion++;loadQuestion(currentQuestion);} }
+function previousQuestion(){ if(currentQuestion>0){currentQuestion--;loadQuestion(currentQuestion);} }
+function markForReview(){ reviewFlags[currentQuestion]=true;updateQuestionBtn(currentQuestion); }
+function clearResponse(){ selectedAnswers[currentQuestion]=null;reviewFlags[currentQuestion]=false;updateQuestionBtn(currentQuestion);loadQuestion(currentQuestion); }
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(timerDuration<=0){clearInterval(timerInterval);submitTest();}
+    else{
+      timerDuration--;
+      let minutes=String(Math.floor(timerDuration/60)).padStart(2,'0');
+      let seconds=String(timerDuration%60).padStart(2,'0');
+      document.getElementById("timer").textContent=`Time: ${minutes}:${seconds}`;
+    }
+  },1000);
+}
+
+function submitTest(){
+  clearInterval(timerInterval);
+  let correct=0,wrong=0,skipped=0,attempted=0;
+  sectionQuestions.forEach((q,i)=>{
+    if(selectedAnswers[i]===null) skipped++;
+    else{
+      attempted++;
+      if(selectedAnswers[i]===q.answer) correct++;
+      else wrong++;
+    }
+  });
+  let rawScore=(correct*1)-(wrong*0.25);
+  let sectionName = (currentSectionIndex < sections.length)? sections[currentSectionIndex].name : "Unknown Section";
+  resultsPerTest.push({section:sectionName,attempted,skipped,correct,wrong,rawScore});
+  totalScore+=rawScore; totalCorrect+=correct; totalWrong+=wrong; totalSkipped+=skipped; totalAttempted+=attempted;
+  
+  currentSectionIndex++;
+  if(currentSectionIndex<sections.length) startSection(); else showFinalResult();
+}
+
+function showFinalResult(){
+  document.getElementById("examScreen").classList.add("hidden");
+  document.getElementById("resultPage").classList.remove("hidden");
+
+  const selectedDay = currentDay.replace("day", "Day ");
+  document.getElementById("resultDayTitle").textContent = selectedDay + " Result";
+
+  const table=document.getElementById("testResultsTable");
+  table.innerHTML=`<tr><th>Section</th><th>Attempted</th><th>Skipped</th><th>Correct</th><th>Wrong</th><th>Raw Score</th></tr>`;
+  resultsPerTest.forEach(r=>{
+    table.innerHTML+=`<tr>
+      <td>${r.section}</td>
+      <td>${r.attempted}</td>
+      <td>${r.skipped}</td>
+      <td>${r.correct}</td>
+      <td>${r.wrong}</td>
+      <td>${r.rawScore.toFixed(2)}</td>
+    </tr>`;
+  });
+  document.getElementById("totalScore").textContent=totalScore.toFixed(2);
+  document.getElementById("totalCorrect").textContent=totalCorrect;
+  document.getElementById("totalWrong").textContent=totalWrong;
+  document.getElementById("totalSkipped").textContent=totalSkipped;
+  document.getElementById("totalAttempted").textContent=totalAttempted;
+}
+
+function goHome(){
+  document.getElementById("examScreen").classList.add("hidden");
+  document.getElementById("resultPage").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+  loadAvailableDays();  // ✅ Reload available days
+}
+
+window.onload=loadAvailableDays;
+</script>
+</body>
+</html>

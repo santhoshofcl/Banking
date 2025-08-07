@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
 <title>Banking Exam Simulator</title>
 <style>
 body {
@@ -28,10 +30,10 @@ body {
 }
 .test-list button:hover, #dayButtons button:hover { background: #0056b3; }
 
-.exam-layout { display: flex; height: 100vh; }
+.exam-layout { display: flex; height: auto;}
 .left-panel, .right-panel {
     width: 20%; padding: 12px; background: #e9ecef;
-    overflow-y: auto; border-right: 1px solid #ccc;
+    overflow-y: auto; border-right: 1px solid #ccc; height: 100vh;
 }
 .right-panel { border-left: 1px solid #ccc; border-right: none; }
 .center-panel { width: 60%; padding: 15px; background: #fff; }
@@ -253,6 +255,9 @@ img.question-img {
 <script>
 const sheetId = "1bP705p-ubcbssLQg4HqMJMBn5k-eM06aTmrnmpnGumY"; 
 
+
+
+let shownParagraphs = new Set();
 let allQuestions = [], sectionQuestions = [];
 let currentQuestion = 0, selectedAnswers = [], reviewFlags = [], visited = [];
 let timerDuration = 0, timerInterval, currentDay = '', currentSectionIndex = 0;
@@ -305,12 +310,15 @@ async function loadAvailableDays() {
 async function loadQuestions(dayName) {
   const rows = await fetchSheetData(dayName);
   allQuestions = rows.map(r => ({
-      section: r.c[0]?.v || "",
-      image: r.c[1]?.v || "",
-      question: r.c[2]?.v || "",
-      options: [r.c[3]?.v, r.c[4]?.v, r.c[5]?.v, r.c[6]?.v],
-      answer: (r.c[7]?.v || 1) - 1
-  }));
+    section: r.c[0]?.v || "",
+    paragraphId: r.c[1]?.v || "",
+    paragraphText: r.c[2]?.v || "",
+    image: r.c[3]?.v || "",
+    question: r.c[4]?.v || "",
+    options: [r.c[5]?.v, r.c[6]?.v, r.c[7]?.v, r.c[8]?.v],
+    answer: isNaN(r.c[9]?.v) ? 0 : Number(r.c[9].v) - 1
+
+}));
 }
 
 async function startDay(dayName){
@@ -323,23 +331,53 @@ async function startDay(dayName){
   startSection();
 }
 
-function startSection(){
+function startSection() {
   const section = sections[currentSectionIndex];
-  sectionQuestions = allQuestions.filter(q=>q.section===section.name).slice(0,section.count);
+  
+  // Reset shown paragraphs for the new section
+  shownParagraphs = new Set();
+
+  // Filter questions for the current section
+  sectionQuestions = allQuestions.filter(q => q.section === section.name).slice(0, section.count);
+
+  // ⚠️ Handle empty section
+  if (sectionQuestions.length === 0) {
+    alert(`⚠ No questions found for section: ${section.name}. Skipping this section...`);
+
+    resultsPerTest.push({
+      section: section.name,
+      attempted: 0,
+      skipped: 0,
+      correct: 0,
+      wrong: 0,
+      rawScore: 0
+    });
+
+    currentSectionIndex++;
+    if (currentSectionIndex < sections.length) {
+      startSection(); // Continue to next section
+    } else {
+      showFinalResult();
+    }
+    return;
+  }
+
   selectedAnswers = new Array(sectionQuestions.length).fill(null);
   reviewFlags = new Array(sectionQuestions.length).fill(false);
   visited = new Array(sectionQuestions.length).fill(false);
-  currentQuestion = 0; timerDuration = section.time;
-
+  currentQuestion = 0;
+  timerDuration = section.time;
 
   document.getElementById("sectionTitle").textContent = section.name;
-
   document.getElementById("dashboard").classList.add("hidden");
   document.getElementById("resultPage").classList.add("hidden");
   document.getElementById("examScreen").classList.remove("hidden");
 
-  loadQuestionsPanel(); loadQuestion(currentQuestion); startTimer();
+  loadQuestionsPanel();
+  loadQuestion(currentQuestion);
+  startTimer();
 }
+
 
 function loadQuestionsPanel(){
   const panel = document.getElementById("questionPanel");
@@ -365,9 +403,18 @@ function loadQuestion(index){
     img.onerror = () => { img.style.display = "none"; }; // Hide broken images
     qArea.appendChild(img);
 }
-  const text=document.createElement("h2");
-  text.textContent=sectionQuestions[index].question;
-  qArea.appendChild(text);
+  if (sectionQuestions[index].paragraphId && !shownParagraphs.has(sectionQuestions[index].paragraphId)) {
+    const para = document.createElement("div");
+    para.className = "paragraph-block";
+    para.innerHTML = `<strong>Paragraph:</strong><br>${sectionQuestions[index].paragraphText}`;
+    qArea.appendChild(para);
+    shownParagraphs.add(sectionQuestions[index].paragraphId);
+}
+
+const text = document.createElement("h2");
+text.textContent = sectionQuestions[index].question;
+qArea.appendChild(text);
+
   const opts=document.getElementById("options");
   opts.innerHTML='';
   sectionQuestions[index].options.forEach((opt,i)=>{
@@ -381,6 +428,11 @@ function loadQuestion(index){
       opts.appendChild(document.createElement("br"));
     }
   });
+
+document.querySelectorAll('.question-btn').forEach(btn => btn.classList.remove('active-question'));
+  const activeBtn = document.getElementById('qbtn' + index);
+  if (activeBtn) activeBtn.classList.add('active-question');
+
   updateQuestionBtn(index);
 }
 
@@ -461,6 +513,13 @@ function goHome(){
   document.getElementById("dashboard").classList.remove("hidden");
   loadAvailableDays();  // ✅ Reload available days
 }
+
+window.onbeforeunload = function () {
+  // Prevent accidental refresh/close during exam
+  if (!document.getElementById("dashboard").classList.contains("hidden")) return;
+  return "⚠️ You have an ongoing test. Are you sure you want to leave?";
+};
+
 
 window.onload=loadAvailableDays;
 </script>

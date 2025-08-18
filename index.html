@@ -294,7 +294,7 @@ async function checkDayAvailability(dayName){
 async function loadAvailableDays() {
   const dayButtons = document.getElementById("dayButtons");
   dayButtons.innerHTML = "";
-  const days = Array.from({length: 10}, (_, i) => `day${i+1}`);
+  const days = Array.from({length: 30}, (_, i) => `day${i+1}`);
 
   for (const sheetName of days) {
     const available = await checkDayAvailability(sheetName);
@@ -525,4 +525,5 @@ window.onload=loadAvailableDays;
 </script>
 </body>
 </html>
+
 
